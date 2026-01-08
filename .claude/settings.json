@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.bsky.app)",
+      "WebFetch(domain:public.api.bsky.app)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
+

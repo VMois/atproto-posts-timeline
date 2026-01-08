@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATProto Posts Timeline</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #1185fe;
+            --bg-color: #f5f8fa;
+            --card-bg: #ffffff;
+            --text-color: #14171a;
+            --border-color: #e1e8ed;
+            --hover-color: #f0f4f8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
+            color: var(--primary-color);
+        }
+
+        .header .subheader {
+            font-size: 0.9rem;
+            color: #657786;
+            margin-bottom: 0.5rem;
+        }
+
+        .input-section {
+            background: var(--card-bg);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .input-group input {
+            flex: 1;
+            min-width: 250px;
+            padding: 0.75rem;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .input-group button {
+            padding: 0.75rem 2rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+
+        .input-group button:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+
+        .input-group button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error {
+            background-color: #fee;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            font-size: 1.1rem;
+            color: var(--primary-color);
+        }
+
+        .calendar {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .calendar-header h2 {
+            font-size: 1.5rem;
+            padding: 0.5rem 1rem;
+            background-color: var(--hover-color);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            transition: all 0.15s ease;
+        }
+
+        .calendar-header h2:hover {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 2px 8px rgba(17, 133, 254, 0.3);
+        }
+
+        .calendar-nav {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .calendar-nav button {
+            padding: 0.5rem 1rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            font-weight: 600;
+            padding: 0.5rem;
+            color: #657786;
+            font-size: 0.9rem;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+
+        .calendar-day:hover {
+            background-color: var(--hover-color);
+        }
+
+        .calendar-day.has-posts {
+            background-color: #e8f5fe;
+            border-color: var(--primary-color);
+        }
+
+        .calendar-day.selected {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .calendar-day.other-month {
+            opacity: 0.3;
+        }
+
+        .post-count {
+            font-size: 0.7rem;
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-top: 0.2rem;
+        }
+
+        .calendar-day.selected .post-count {
+            color: white;
+        }
+
+        .posts-section {
+            background: var(--card-bg);
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .posts-header {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .post-item {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            transition: background-color 0.2s;
+        }
+
+        .post-item:last-child {
+            border-bottom: none;
+        }
+
+        .post-item:hover {
+            background-color: var(--hover-color);
+        }
+
+        .post-date {
+            font-size: 0.85rem;
+            color: #657786;
+            margin-bottom: 0.5rem;
+        }
+
+        .post-text {
+            margin-bottom: 0.5rem;
+        }
+
+        .post-link {
+            font-size: 0.85rem;
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .post-link:hover {
+            text-decoration: underline;
+        }
+
+        .no-posts {
+            text-align: center;
+            padding: 2rem;
+            color: #657786;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .calendar-grid {
+                gap: 0.25rem;
+            }
+
+            .calendar-day {
+                font-size: 0.85rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container" x-data="postsTimeline()">
+        <div class="header">
+            <h1>📅 ATProto Posts Timeline</h1>
+            <p class="subheader">Using public BlueSky API</p>
+            <p>View your posts on a calendar</p>
+        </div>
+
+        <div class="input-section">
+            <div class="input-group">
+                <input
+                    type="text"
+                    x-model="handle"
+                    placeholder="Enter ATProto handle (e.g., user.bsky.social)"
+                    @keyup.enter="fetchPosts()"
+                >
+                <button
+                    @click="fetchPosts()"
+                    :disabled="loading || !handle"
+                    x-text="loading ? 'Loading...' : 'Load Posts'"
+                ></button>
+            </div>
+        </div>
+
+        <div x-show="error" class="error" x-text="error"></div>
+
+        <div x-show="loading" class="loading">
+            Loading posts...
+        </div>
+
+        <div x-show="posts.length > 0 && !loading">
+            <div class="calendar">
+                <div class="calendar-header">
+                    <button class="calendar-nav" @click="previousMonth()">← Prev</button>
+                    <h2 x-text="currentMonthYear" @click="selectMonth()" style="cursor: pointer;"></h2>
+                    <button class="calendar-nav" @click="nextMonth()">Next →</button>
+                </div>
+                <div class="calendar-grid">
+                    <div class="calendar-day-header">Sun</div>
+                    <div class="calendar-day-header">Mon</div>
+                    <div class="calendar-day-header">Tue</div>
+                    <div class="calendar-day-header">Wed</div>
+                    <div class="calendar-day-header">Thu</div>
+                    <div class="calendar-day-header">Fri</div>
+                    <div class="calendar-day-header">Sat</div>
+
+                    <template x-for="day in calendarDays" :key="day.dateStr">
+                        <div
+                            class="calendar-day"
+                            :class="{
+                                'has-posts': day.count > 0,
+                                'selected': selectedDate === day.dateStr,
+                                'other-month': !day.isCurrentMonth
+                            }"
+                            @click="selectDate(day.dateStr)"
+                        >
+                            <div x-text="day.day"></div>
+                            <div class="post-count" x-show="day.count > 0" x-text="day.count"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="posts-section" x-show="selectedDate">
+                <h3 class="posts-header" x-text="selectedDateTitle"></h3>
+                <div x-show="filteredPosts.length === 0" class="no-posts">
+                    No posts on this date
+                </div>
+                <template x-for="post in filteredPosts" :key="post.uri">
+                    <div class="post-item">
+                        <div class="post-date" x-text="formatPostDate(post.indexedAt)"></div>
+                        <div class="post-text" x-text="post.record.text"></div>
+                        <a :href="getPostUrl(post)" target="_blank" class="post-link">View on BlueSky →</a>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function postsTimeline() {
+            return {
+                handle: '',
+                posts: [],
+                loading: false,
+                error: '',
+                selectedDate: '',
+                viewMode: 'day', // 'day' or 'month'
+                currentMonth: new Date().getMonth(),
+                currentYear: new Date().getFullYear(),
+                did: '',
+
+                async fetchPosts() {
+                    this.loading = true;
+                    this.error = '';
+                    this.posts = [];
+
+                    try {
+                        // First, resolve handle to DID
+                        const handleResponse = await fetch(
+                            `https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=${encodeURIComponent(this.handle)}`
+                        );
+
+                        if (!handleResponse.ok) {
+                            throw new Error('Failed to resolve handle. Please check the handle and try again.');
+                        }
+
+                        const handleData = await handleResponse.json();
+                        this.did = handleData.did;
+
+                        // Now fetch the author feed
+                        let allPosts = [];
+                        let cursor = null;
+                        let fetchCount = 0;
+                        const maxFetches = 10; // Limit to prevent infinite loops
+
+                        do {
+                            let url = `https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${encodeURIComponent(this.did)}&limit=100`;
+                            if (cursor) {
+                                url += `&cursor=${cursor}`;
+                            }
+
+                            const feedResponse = await fetch(url);
+
+                            if (!feedResponse.ok) {
+                                throw new Error('Failed to fetch posts from BlueSky API');
+                            }
+
+                            const feedData = await feedResponse.json();
+                            allPosts = allPosts.concat(feedData.feed);
+                            cursor = feedData.cursor;
+                            fetchCount++;
+
+                        } while (cursor && fetchCount < maxFetches);
+
+                        this.posts = allPosts;
+
+                        if (this.posts.length > 0) {
+                            // Set current month/year to the most recent post
+                            const latestPost = new Date(this.posts[0].post.indexedAt);
+                            this.currentMonth = latestPost.getMonth();
+                            this.currentYear = latestPost.getFullYear();
+                        }
+
+                    } catch (err) {
+                        this.error = err.message;
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                get currentMonthYear() {
+                    const date = new Date(this.currentYear, this.currentMonth);
+                    return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                },
+
+                get calendarDays() {
+                    const firstDay = new Date(this.currentYear, this.currentMonth, 1);
+                    const lastDay = new Date(this.currentYear, this.currentMonth + 1, 0);
+                    const startingDayOfWeek = firstDay.getDay();
+                    const monthLength = lastDay.getDate();
+
+                    const days = [];
+
+                    // Add previous month days
+                    const prevMonthLastDay = new Date(this.currentYear, this.currentMonth, 0).getDate();
+                    for (let i = startingDayOfWeek - 1; i >= 0; i--) {
+                        const day = prevMonthLastDay - i;
+                        const dateStr = this.getDateStr(this.currentYear, this.currentMonth - 1, day);
+                        days.push({
+                            day,
+                            dateStr,
+                            count: this.getPostCountForDate(dateStr),
+                            isCurrentMonth: false
+                        });
+                    }
+
+                    // Add current month days
+                    for (let day = 1; day <= monthLength; day++) {
+                        const dateStr = this.getDateStr(this.currentYear, this.currentMonth, day);
+                        days.push({
+                            day,
+                            dateStr,
+                            count: this.getPostCountForDate(dateStr),
+                            isCurrentMonth: true
+                        });
+                    }
+
+                    // Add next month days to fill the grid
+                    const remainingDays = 42 - days.length; // 6 rows × 7 days
+                    for (let day = 1; day <= remainingDays; day++) {
+                        const dateStr = this.getDateStr(this.currentYear, this.currentMonth + 1, day);
+                        days.push({
+                            day,
+                            dateStr,
+                            count: this.getPostCountForDate(dateStr),
+                            isCurrentMonth: false
+                        });
+                    }
+
+                    return days;
+                },
+
+                getDateStr(year, month, day) {
+                    // Use UTC to avoid timezone shifts
+                    const date = new Date(Date.UTC(year, month, day));
+                    return date.toISOString().split('T')[0];
+                },
+
+                getPostCountForDate(dateStr) {
+                    return this.posts.filter(item => {
+                        const postDate = item.post.indexedAt.split('T')[0];
+                        return postDate === dateStr;
+                    }).length;
+                },
+
+                selectDate(dateStr) {
+                    this.selectedDate = dateStr;
+                    this.viewMode = 'day';
+                },
+
+                selectMonth() {
+                    this.viewMode = 'month';
+                    this.selectedDate = `${this.currentYear}-${String(this.currentMonth + 1).padStart(2, '0')}`;
+                },
+
+                get selectedDateTitle() {
+                    if (!this.selectedDate) return '';
+
+                    if (this.viewMode === 'month') {
+                        // Show month and year
+                        const [year, month] = this.selectedDate.split('-').map(Number);
+                        const date = new Date(Date.UTC(year, month - 1, 1));
+                        return date.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            timeZone: 'UTC'
+                        });
+                    } else {
+                        // Show full date with weekday
+                        const [year, month, day] = this.selectedDate.split('-').map(Number);
+                        const date = new Date(Date.UTC(year, month - 1, day));
+                        return date.toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric',
+                            timeZone: 'UTC'
+                        });
+                    }
+                },
+
+                get filteredPosts() {
+                    if (!this.selectedDate) return [];
+
+                    if (this.viewMode === 'month') {
+                        // Filter posts by month (YYYY-MM)
+                        return this.posts.filter(item => {
+                            const postDate = item.post.indexedAt.split('T')[0];
+                            return postDate.startsWith(this.selectedDate);
+                        }).map(item => item.post);
+                    } else {
+                        // Filter posts by exact date (YYYY-MM-DD)
+                        return this.posts.filter(item => {
+                            const postDate = item.post.indexedAt.split('T')[0];
+                            return postDate === this.selectedDate;
+                        }).map(item => item.post);
+                    }
+                },
+
+                formatPostDate(dateStr) {
+                    const date = new Date(dateStr);
+                    return date.toLocaleString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+                },
+
+                getPostUrl(post) {
+                    const uri = post.uri;
+                    const parts = uri.split('/');
+                    const rkey = parts[parts.length - 1];
+                    return `https://bsky.app/profile/${this.did}/post/${rkey}`;
+                },
+
+                previousMonth() {
+                    if (this.currentMonth === 0) {
+                        this.currentMonth = 11;
+                        this.currentYear--;
+                    } else {
+                        this.currentMonth--;
+                    }
+                },
+
+                nextMonth() {
+                    if (this.currentMonth === 11) {
+                        this.currentMonth = 0;
+                        this.currentYear++;
+                    } else {
+                        this.currentMonth++;
+                    }
+                }
+            };
+        }
+    </script>
+</body>
+</html>
